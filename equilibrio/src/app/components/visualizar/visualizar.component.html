@@ -93,7 +93,13 @@
     <!-- CHART -->
     <div class="chart-card">
       <div class="chart-header">
-        <span class="eco-card-title">📈 Ingresos en el tiempo</span>
+        <div class="chart-title-group">
+          <span class="eco-card-title">📈 Ingresos en el tiempo</span>
+          <select class="chart-filter-select" [ngModel]="chartTipo()" (ngModelChange)="chartTipo.set($event)">
+            <option value="">Todos los servicios</option>
+            @for (t of tipos; track t) { <option [value]="t">{{ t }}</option> }
+          </select>
+        </div>
         <div class="period-pills">
           @for (p of periods; track p.key) {
             <button [class.active]="period()===p.key" (click)="setPeriod(p.key)">{{ p.label }}</button>
@@ -121,18 +127,6 @@
         }
       </div>
 
-      <!-- Días de semana -->
-      <div class="eco-card">
-        <div class="eco-card-title">📅 Ingresos por día de semana</div>
-        @for (d of dayBars(); track d.label) {
-          <div class="day-row">
-            <span class="day-label">{{ d.label }}</span>
-            <div class="bar-track"><div class="bar-fill" [style.width]="d.pct+'%'"></div></div>
-            <span class="day-amount">S/.{{ d.value.toFixed(0) }}</span>
-          </div>
-        }
-      </div>
-
       <!-- Clientes top -->
       <div class="eco-card">
         <div class="eco-card-title">👑 Clientes top (por gasto)</div>
@@ -144,18 +138,6 @@
             <span class="rank-n">{{ i+1 }}</span>
             <span class="rank-name" style="text-transform:capitalize">{{ item[0] }}</span>
             <span class="rank-val">S/.{{ item[1].toFixed(2) }}</span>
-          </div>
-        }
-      </div>
-
-      <!-- Meses del año -->
-      <div class="eco-card">
-        <div class="eco-card-title">🗓️ Ingresos por mes (año actual)</div>
-        @for (m of rankingMeses(); track m.label) {
-          <div class="rank-row">
-            <span class="rank-n rank-n--text">{{ m.label }}</span>
-            <span class="rank-name"></span>
-            <span class="rank-val">{{ m.value > 0 ? 'S/.' + m.value.toFixed(2) : '—' }}</span>
           </div>
         }
       </div>

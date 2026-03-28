@@ -72,6 +72,13 @@ td { padding:.8rem 1.2rem; vertical-align:middle; }
 /* CHART */
 .chart-card { background:#fff; border:1px solid #e4e4e4; border-radius:12px; padding:1.5rem; }
 .chart-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.2rem; }
+.chart-title-group { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.chart-filter-select {
+  padding: .35rem .8rem; border-radius: 8px; border: 1.5px solid #e4e4e4;
+  font-family: 'DM Sans', sans-serif; font-size: .8rem; color: #555;
+  outline: none; transition: border-color .2s; cursor: pointer;
+}
+.chart-filter-select:focus { border-color: #5a9e2f; }
 .eco-card-title { font-family:'Playfair Display',serif; font-size:1rem; color:#555; }
 .period-pills { display:flex; gap:.4rem; }
 .period-pills button {

@@ -30,8 +30,9 @@ export class VisualizarComponent implements OnInit, AfterViewInit {
   fNombre = signal(''); fTipo = signal(''); fDesde = signal(''); fHasta = signal('');
   filtrados = signal<Servicio[]>([]);
 
-  // Chart period
+  // Chart state
   period = signal<ChartPeriod>('mes');
+  chartTipo = signal(''); // Nuevo: Filtro para la gráfica
   periods: {key: ChartPeriod, label: string}[] = [
     {key:'dia', label:'Día'},
     {key:'semana', label:'Semana'},
@@ -78,28 +79,12 @@ export class VisualizarComponent implements OnInit, AfterViewInit {
     return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);
   });
 
-  rankingMeses = computed(() => {
-    const año = new Date().getFullYear();
-    const c: Record<string,number> = {};
-    this.svc.servicios().forEach(s=>{ const m=s.fecha.slice(0,7); c[m]=(c[m]||0)+s.monto; });
-    return Array.from({length:12},(_,i)=>{
-      const key = `${año}-${String(i+1).padStart(2,'0')}`;
-      return { label: MESES[i], value: c[key]||0 };
-    });
-  });
-
-  dayBars = computed(() => {
-    const byd = [0,0,0,0,0,0,0];
-    this.svc.servicios().forEach(s=>{ const d=new Date(s.fecha+'T12:00:00').getDay(); byd[d]+=s.monto; });
-    const max = Math.max(...byd,1);
-    return DIAS.map((d,i)=>({ label:d, value:byd[i], pct:(byd[i]/max*100).toFixed(1) }));
-  });
-
   constructor(public auth: AuthService, private svc: ServiciosService) {
-    // Re-run chart when period or data changes
+    // Re-run chart when period, data or chart filter changes
     effect(() => {
-      this.period(); // track
-      this.svc.servicios(); // track
+      this.period(); 
+      this.svc.servicios();
+      this.chartTipo();
       if (this.activeTab() === 'economicos' && this.chart) {
         this.updateChart();
       }
@@ -150,12 +135,17 @@ export class VisualizarComponent implements OnInit, AfterViewInit {
 
   // ── CHART ──────────────────────────────
   private getChartData(): { labels: string[]; data: number[] } {
-    const all = this.svc.servicios();
+    let all = this.svc.servicios();
+    
+    // Filtramos por servicio si el usuario seleccionó uno
+    if (this.chartTipo()) {
+      all = all.filter(s => s.tipo === this.chartTipo());
+    }
+
     const p   = this.period();
     const now = new Date();
 
     if (p === 'dia') {
-      // last 24 hours by hour
       const labels: string[] = [];
       const data: number[]   = [];
       for (let h = 0; h < 24; h++) {
@@ -169,7 +159,6 @@ export class VisualizarComponent implements OnInit, AfterViewInit {
     }
 
     if (p === 'semana') {
-      // last 7 days
       const labels: string[] = [];
       const data: number[]   = [];
       for (let i = 6; i >= 0; i--) {
@@ -182,7 +171,6 @@ export class VisualizarComponent implements OnInit, AfterViewInit {
     }
 
     if (p === 'mes') {
-      // each day of current month
       const y = now.getFullYear(), m = now.getMonth()+1;
       const days = new Date(y,m,0).getDate();
       const labels: string[] = [];
@@ -195,7 +183,7 @@ export class VisualizarComponent implements OnInit, AfterViewInit {
       return { labels, data };
     }
 
-    // año — each month
+    // año
     const y = now.getFullYear();
     const labels = MESES;
     const data = Array.from({length:12},(_,i)=>{
