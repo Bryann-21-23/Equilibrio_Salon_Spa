@@ -1,0 +1,56 @@
+<div class="form-card">
+  <div class="form-title">Nuevo servicio</div>
+
+  <div class="field autocomplete-container">
+    <label>Nombre del cliente</label>
+    <div class="input-with-badge">
+      <input type="text" [ngModel]="nombre()" (ngModelChange)="onNombreChange($event)" placeholder="Ej. María García" autocomplete="off">
+      @if (selectedCliente()) {
+        <span class="client-badge">✓ Cliente vinculado</span>
+      }
+    </div>
+
+    @if (showDropdown() && sugerencias().length > 0) {
+      <div class="suggestions-dropdown">
+        @for (s of sugerencias(); track s.id) {
+          <div class="suggestion-item" (click)="selectCliente(s)">
+            <span class="s-name">{{ s.nombre }} {{ s.apellido }}</span>
+            <span class="s-code">{{ s.codigo }}</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="field">
+    <label>Tipo de servicio</label>
+    <select [ngModel]="tipo()" (ngModelChange)="tipo.set($event)">
+      <option value="">Seleccionar...</option>
+      @for (t of tipos; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+  </div>
+...
+
+  <div class="row2">
+    <div class="field">
+      <label>Monto (S/.)</label>
+      <input type="number" [ngModel]="monto()" (ngModelChange)="monto.set($event)" placeholder="0.00" min="0" step="0.50">
+    </div>
+    <div class="field">
+      <label>Fecha</label>
+      <input type="date" [ngModel]="fecha()" (ngModelChange)="fecha.set($event)">
+    </div>
+    <div class="field">
+      <label>Hora</label>
+      <input type="time" [ngModel]="hora()" (ngModelChange)="hora.set($event)">
+    </div>
+  </div>
+
+  <button class="btn-primary" (click)="submit()">+ Agregar servicio</button>
+
+  @if (msg()) {
+    <p [class]="msgOk() ? 'msg ok' : 'msg err'">{{ msg() }}</p>
+  }
+</div>

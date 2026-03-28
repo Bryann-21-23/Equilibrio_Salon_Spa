@@ -1,0 +1,28 @@
+<div class="admin-wrap">
+
+  <!-- SECCIÓN DE EXPORTACIÓN Y BACKUP -->
+  <div class="section backup-section">
+    <div class="section-title">Centro de Control de Datos</div>
+    <p class="section-desc">Gestiona tus datos para análisis externos o copias de seguridad locales.</p>
+    <div class="backup-actions">
+      <button class="btn-action excel" (click)="exportToExcel()">
+        📊 Exportar a Excel (.xlsx)
+      </button>
+      <button class="btn-action ai" (click)="exportForAI()">
+        🤖 Preparar para IA (.json)
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Crear nuevo usuario</div>
+...
+      @if (msg()) {
+        <p [class]="msgOk() ? 'msg ok' : 'msg err'">{{ msg() }}</p>
+      }
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Usuarios registrados</div>
+...
