@@ -23,7 +23,7 @@ export class LoginComponent {
     if (ok) {
       this.loggedIn.emit();
     } else {
-      this.error.set('Usuario o contraseña incorrectos.');
+      this.error.set('Credenciales inválidas.');
     }
   }
 
