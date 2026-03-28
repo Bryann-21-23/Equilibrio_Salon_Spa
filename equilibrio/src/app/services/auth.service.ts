@@ -82,8 +82,15 @@ export class AuthService {
   async createUser(username: string, password: string, role: 'admin' | 'user'): Promise<boolean> {
     const email = `${username.toLowerCase()}@equilibrio.com`;
 
-    // 1. Crear en Supabase Auth
-    const { data, error: authError } = await supabase.auth.signUp({
+    // Usamos un cliente temporal para NO cerrar la sesión del administrador actual
+    const { createClient } = await import('@supabase/supabase-js');
+    const { environment } = await import('../../environments/environment');
+    const tempSupabase = createClient(environment.supabaseUrl, environment.supabaseKey, {
+      auth: { persistSession: false }
+    });
+
+    // 1. Crear en Supabase Auth usando el cliente temporal
+    const { data, error: authError } = await tempSupabase.auth.signUp({
       email,
       password
     });
@@ -93,11 +100,11 @@ export class AuthService {
       return false;
     }
 
-    // 2. Crear perfil en tabla pública usuarios_sistema
+    // 2. Crear perfil en tabla pública usuarios_sistema usando el cliente principal
     const { error: dbError } = await supabase
       .from('usuarios_sistema')
       .insert([{ 
-        id: data.user.id, // Vinculamos con el UID
+        id: data.user.id, 
         username, 
         role 
       }]);
