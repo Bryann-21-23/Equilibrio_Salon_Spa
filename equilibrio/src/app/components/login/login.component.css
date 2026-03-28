@@ -1,3 +1,33 @@
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-container input {
+  padding-right: 3rem !important; /* Espacio para el botón del ojo */
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 0.4rem;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  border-radius: 50%;
+}
+
+.btn-toggle-password:hover {
+  color: #5a9e2f;
+  background: #f0f7ea;
+}
+
 .login-screen {
   min-height: 100vh;
   display: flex;
@@ -113,7 +143,7 @@
   }
   
   .login-logo svg {
-    width: 180px;
+    width: 216px; /* Ajustado el tamaño responsivo (180 * 1.2) */
   }
   
   .login-title {

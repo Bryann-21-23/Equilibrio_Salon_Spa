@@ -1,7 +1,7 @@
 <div class="login-screen">
   <div class="login-box">
     <div class="login-logo">
-      <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg" width="200">
+      <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg" width="240">
         <g transform="translate(100,8)">
           <path d="M10,30 Q30,-10 60,-5 Q40,20 10,30Z" fill="#7ab832"/>
           <path d="M10,30 Q-5,5 20,-8 Q25,15 10,30Z" fill="#5a9e2f"/>
@@ -21,10 +21,26 @@
       <input type="text" [ngModel]="username()" (ngModelChange)="username.set($event)"
              placeholder="Ingresa tu usuario" (keydown)="onKey($event)">
     </div>
-    <div class="field">
+    <div class="field password-field">
       <label>Contraseña</label>
-      <input type="password" [ngModel]="password()" (ngModelChange)="password.set($event)"
-             placeholder="••••••••" (keydown)="onKey($event)">
+      <div class="input-container">
+        <input [type]="showPassword() ? 'text' : 'password'" [ngModel]="password()" (ngModelChange)="password.set($event)"
+               placeholder="••••••••" (keydown)="onKey($event)">
+        <button type="button" class="btn-toggle-password" (click)="togglePassword()" aria-label="Mostrar contraseña">
+          @if (showPassword()) {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          }
+        </button>
+      </div>
     </div>
 
     <button class="btn-primary" (click)="doLogin()">Ingresar</button>

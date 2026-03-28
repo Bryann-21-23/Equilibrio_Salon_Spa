@@ -16,6 +16,7 @@ export class LoginComponent {
 
   username = signal('');
   password = signal('');
+  showPassword = signal(false);
   error = signal('');
 
   async doLogin() {
@@ -25,6 +26,10 @@ export class LoginComponent {
     } else {
       this.error.set('Credenciales inválidas.');
     }
+  }
+
+  togglePassword() {
+    this.showPassword.update(v => !v);
   }
 
   onKey(e: KeyboardEvent) { if (e.key === 'Enter') this.doLogin(); }
