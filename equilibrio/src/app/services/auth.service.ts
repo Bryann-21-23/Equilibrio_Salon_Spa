@@ -11,7 +11,19 @@ export class AuthService {
   allUsers = computed(() => this.usersSignal());
 
   constructor() {
+    this.restoreSession();
     this.loadUsers();
+  }
+
+  private restoreSession() {
+    const saved = localStorage.getItem('equilibrio_user');
+    if (saved) {
+      try {
+        this.currentUser.set(JSON.parse(saved));
+      } catch (e) {
+        localStorage.removeItem('equilibrio_user');
+      }
+    }
   }
 
   async loadUsers() {
@@ -36,7 +48,9 @@ export class AuthService {
       .single();
 
     if (!error && data) {
-      this.currentUser.set(data as Usuario);
+      const user = data as Usuario;
+      this.currentUser.set(user);
+      localStorage.setItem('equilibrio_user', JSON.stringify(user));
       return true;
     }
     return false;
@@ -44,6 +58,7 @@ export class AuthService {
 
   logout() {
     this.currentUser.set(null);
+    localStorage.removeItem('equilibrio_user');
   }
 
   getUsers(): Usuario[] {

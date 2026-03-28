@@ -8,6 +8,7 @@ export default defineConfig({
   workers: process.env['CI'] ? 1 : undefined,
   reporter: 'html',
   use: {
+    baseURL: 'http://localhost:4200',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -21,4 +22,10 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
   ],
+  webServer: {
+    command: 'npm start',
+    url: 'http://localhost:4200',
+    reuseExistingServer: !process.env['CI'],
+    timeout: 120 * 1000,
+  },
 });
