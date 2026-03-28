@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { ClientesService } from '../../services/clientes.service';
@@ -20,13 +20,17 @@ export class AdminComponent {
   msg     = signal('');
   msgOk   = signal(false);
 
-  users = computed(() => this.auth.getUsers());
+  // Usamos el signal expuesto del servicio
+  users = computed(() => this.auth.allUsers());
 
   constructor(
     public auth: AuthService,
     private clientesSvc: ClientesService,
     private serviciosSvc: ServiciosService
-  ) {}
+  ) {
+    // Al entrar a admin, refrescamos la lista de usuarios
+    this.auth.loadUsers();
+  }
 
   async create() {
     if (!this.newUser() || !this.newPass()) {
@@ -34,23 +38,30 @@ export class AdminComponent {
       this.msgOk.set(false);
       return;
     }
-    const ok = await this.auth.createUser(this.newUser(), this.newPass(), this.newRole());
-    if (!ok) {
-      this.msg.set('Error al crear usuario o el usuario ya existe ⚠️');
-      this.msgOk.set(false);
-      return;
-    }
-    this.newUser.set('');
-    this.newPass.set('');
-    this.msg.set('Usuario creado ✓');
+    
+    this.msg.set('Creando usuario...');
     this.msgOk.set(true);
-    setTimeout(() => this.msg.set(''), 2500);
+
+    const ok = await this.auth.createUser(this.newUser(), this.newPass(), this.newRole());
+    
+    if (ok) {
+      this.newUser.set('');
+      this.newPass.set('');
+      this.msg.set('Usuario creado correctamente ✓');
+      this.msgOk.set(true);
+    } else {
+      this.msg.set('Error: El usuario ya existe o hubo un fallo en la nube ❌');
+      this.msgOk.set(false);
+    }
+    
+    setTimeout(() => this.msg.set(''), 3000);
   }
 
   async delete(u: Usuario) {
     if (u.username === this.auth.currentUser()?.username) {
       this.msg.set('No puedes eliminar tu propio usuario.');
       this.msgOk.set(false);
+      setTimeout(() => this.msg.set(''), 2500);
       return;
     }
     if (confirm(`¿Estás seguro de eliminar al usuario ${u.username}?`)) {
@@ -71,23 +82,29 @@ export class AdminComponent {
   }
 
   exportToExcel() {
-    const clientes = this.clientesSvc.clientes();
-    const servicios = this.serviciosSvc.servicios();
-    const personal = this.auth.getUsers();
+    try {
+      const clientes = this.clientesSvc.clientes();
+      const servicios = this.serviciosSvc.servicios();
+      const personal = this.auth.getUsers();
 
-    const wb = XLSX.utils.book_new();
-    
-    const wsClientes = XLSX.utils.json_to_sheet(clientes);
-    XLSX.utils.book_append_sheet(wb, wsClientes, 'Clientes');
+      const wb = XLSX.utils.book_new();
+      
+      // Aseguramos que las hojas tengan al menos un encabezado si están vacías
+      const wsClientes = clientes.length > 0 ? XLSX.utils.json_to_sheet(clientes) : XLSX.utils.aoa_to_sheet([['ID', 'Nombre', 'Apellido', 'Codigo']]);
+      XLSX.utils.book_append_sheet(wb, wsClientes, 'Clientes');
 
-    const wsServicios = XLSX.utils.json_to_sheet(servicios);
-    XLSX.utils.book_append_sheet(wb, wsServicios, 'Servicios');
+      const wsServicios = servicios.length > 0 ? XLSX.utils.json_to_sheet(servicios) : XLSX.utils.aoa_to_sheet([['ID', 'Nombre', 'Tipo', 'Monto', 'Fecha']]);
+      XLSX.utils.book_append_sheet(wb, wsServicios, 'Servicios');
 
-    const wsPersonal = XLSX.utils.json_to_sheet(personal);
-    XLSX.utils.book_append_sheet(wb, wsPersonal, 'Personal_Sistema');
+      const wsPersonal = personal.length > 0 ? XLSX.utils.json_to_sheet(personal) : XLSX.utils.aoa_to_sheet([['ID', 'Username', 'Role']]);
+      XLSX.utils.book_append_sheet(wb, wsPersonal, 'Personal_Sistema');
 
-    const fileName = `Equilibrio_Full_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+      const fileName = `Equilibrio_Full_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (e) {
+      console.error('Error al exportar Excel:', e);
+      alert('Error al generar el archivo Excel. Revisa la consola.');
+    }
   }
 
   exportForAI() {

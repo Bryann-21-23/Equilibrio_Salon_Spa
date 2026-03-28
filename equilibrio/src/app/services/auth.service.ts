@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { Usuario } from '../models';
 import { supabase } from '../lib/supabase';
 
@@ -6,12 +6,15 @@ import { supabase } from '../lib/supabase';
 export class AuthService {
   currentUser = signal<Usuario | null>(null);
   private usersSignal = signal<Usuario[]>([]);
+  
+  // Exponemos la lista de usuarios como una señal de solo lectura
+  allUsers = computed(() => this.usersSignal());
 
   constructor() {
     this.loadUsers();
   }
 
-  private async loadUsers() {
+  async loadUsers() {
     const { data, error } = await supabase
       .from('usuarios_sistema')
       .select('*')
@@ -19,6 +22,8 @@ export class AuthService {
 
     if (!error && data) {
       this.usersSignal.set(data as Usuario[]);
+    } else if (error) {
+      console.error('Error cargando usuarios:', error.message);
     }
   }
 
@@ -51,7 +56,12 @@ export class AuthService {
       .insert([{ username, password, role }])
       .select();
 
-    if (!error && data) {
+    if (error) {
+      console.error('Error al crear usuario:', error.message);
+      return false;
+    }
+
+    if (data) {
       await this.loadUsers();
       return true;
     }
