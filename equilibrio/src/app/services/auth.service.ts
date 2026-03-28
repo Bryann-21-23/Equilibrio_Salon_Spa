@@ -7,22 +7,40 @@ export class AuthService {
   currentUser = signal<Usuario | null>(null);
   private usersSignal = signal<Usuario[]>([]);
   
-  // Exponemos la lista de usuarios como una señal de solo lectura
   allUsers = computed(() => this.usersSignal());
 
   constructor() {
-    this.restoreSession();
+    this.initSession();
     this.loadUsers();
   }
 
-  private restoreSession() {
-    const saved = localStorage.getItem('equilibrio_user');
-    if (saved) {
-      try {
-        this.currentUser.set(JSON.parse(saved));
-      } catch (e) {
-        localStorage.removeItem('equilibrio_user');
+  // Inicializa la sesión usando el SDK de Supabase Auth
+  private async initSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await this.fetchUserProfile(session.user.id);
+    }
+
+    // Escuchar cambios de estado (login/logout)
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await this.fetchUserProfile(session.user.id);
+      } else {
+        this.currentUser.set(null);
       }
+    });
+  }
+
+  // Carga los datos adicionales (rol, username) de nuestra tabla pública
+  private async fetchUserProfile(uid: string) {
+    const { data, error } = await supabase
+      .from('usuarios_sistema')
+      .select('*')
+      .eq('id', uid) // Usamos el UID de Supabase Auth como ID en la tabla
+      .single();
+
+    if (!error && data) {
+      this.currentUser.set(data as Usuario);
     }
   }
 
@@ -30,60 +48,72 @@ export class AuthService {
     const { data, error } = await supabase
       .from('usuarios_sistema')
       .select('*')
-      .order('id', { ascending: true });
+      .order('username', { ascending: true });
 
     if (!error && data) {
       this.usersSignal.set(data as Usuario[]);
-    } else if (error) {
-      console.error('Error cargando usuarios:', error.message);
     }
   }
 
+  // Login real con Supabase Auth
   async login(username: string, password: string): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('usuarios_sistema')
-      .select('*')
-      .eq('username', username)
-      .eq('password', password)
-      .single();
+    const email = `${username.toLowerCase()}@equilibrio.com`;
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-    if (!error && data) {
-      const user = data as Usuario;
-      this.currentUser.set(user);
-      localStorage.setItem('equilibrio_user', JSON.stringify(user));
+    if (!error && data.user) {
+      await this.fetchUserProfile(data.user.id);
       return true;
     }
+    
+    console.error('Error de login:', error?.message);
     return false;
   }
 
-  logout() {
+  async logout() {
+    await supabase.auth.signOut();
     this.currentUser.set(null);
-    localStorage.removeItem('equilibrio_user');
   }
 
-  getUsers(): Usuario[] {
-    return this.usersSignal();
-  }
-
+  // Creación de usuario (Admin)
   async createUser(username: string, password: string, role: 'admin' | 'user'): Promise<boolean> {
-    const { data, error } = await supabase
-      .from('usuarios_sistema')
-      .insert([{ username, password, role }])
-      .select();
+    const email = `${username.toLowerCase()}@equilibrio.com`;
 
-    if (error) {
-      console.error('Error al crear usuario:', error.message);
+    // 1. Crear en Supabase Auth
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    if (authError || !data.user) {
+      console.error('Error Auth SignUp:', authError?.message);
       return false;
     }
 
-    if (data) {
-      await this.loadUsers();
-      return true;
+    // 2. Crear perfil en tabla pública usuarios_sistema
+    const { error: dbError } = await supabase
+      .from('usuarios_sistema')
+      .insert([{ 
+        id: data.user.id, // Vinculamos con el UID
+        username, 
+        role 
+      }]);
+
+    if (dbError) {
+      console.error('Error DB Insert:', dbError.message);
+      return false;
     }
-    return false;
+
+    await this.loadUsers();
+    return true;
   }
 
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: string): Promise<boolean> {
+    // Nota: El borrado de Auth requiere Admin SDK (Edge Functions), 
+    // por ahora solo borraremos el perfil de la tabla pública.
     const { error } = await supabase
       .from('usuarios_sistema')
       .delete()
@@ -94,6 +124,10 @@ export class AuthService {
       return true;
     }
     return false;
+  }
+
+  getUsers(): Usuario[] {
+    return this.usersSignal();
   }
 
   isAdmin(): boolean {

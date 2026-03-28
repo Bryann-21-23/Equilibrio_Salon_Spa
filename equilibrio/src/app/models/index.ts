@@ -1,7 +1,7 @@
 export interface Usuario {
-  id: number;
+  id: string; // Cambiado a string para el UUID de Supabase
   username: string;
-  password: string;
+  password?: string; // Opcional, ya que no se recupera del servidor
   role: 'admin' | 'user';
 }
 
