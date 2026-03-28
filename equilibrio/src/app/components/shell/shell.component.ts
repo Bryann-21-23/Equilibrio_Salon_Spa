@@ -1,38 +1,24 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { VisualizarComponent } from '../visualizar/visualizar.component';
-import { RegistrarComponent } from '../registrar/registrar.component';
-import { AdminComponent } from '../admin/admin.component';
-import { RegistrarUsuariosComponent } from '../registrar-usuarios/registrar-usuarios.component';
-import { VisualizarUsuariosComponent } from '../visualizar-usuarios/visualizar-usuarios.component';
-
-type Tab = 'visualizar' | 'registrar' | 'admin' | 'registrar-usuarios' | 'visualizar-usuarios';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [
-    VisualizarComponent, 
-    RegistrarComponent, 
-    AdminComponent, 
-    RegistrarUsuariosComponent,
-    VisualizarUsuariosComponent
-  ],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css',
 })
 export class ShellComponent {
-  activeTab = signal<Tab>('visualizar');
+  private router = inject(Router);
   isAdmin   = computed(() => this.auth.isAdmin());
   username  = computed(() => this.auth.currentUser()?.username ?? '');
   roleLabel = computed(() => this.auth.isAdmin() ? 'Administrador' : 'Empleada');
 
   constructor(public auth: AuthService) {}
 
-  switch(tab: Tab) {
-    if (tab === 'admin' && !this.isAdmin()) return;
-    this.activeTab.set(tab);
+  logout() {
+    this.auth.logout();
+    this.router.navigate(['/login']);
   }
-
-  logout() { this.auth.logout(); }
 }

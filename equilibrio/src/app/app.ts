@@ -1,22 +1,10 @@
-import { Component, computed } from '@angular/core';
-import { AuthService } from './services/auth.service';
-import { LoginComponent } from './components/login/login.component';
-import { ShellComponent } from './components/shell/shell.component';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [LoginComponent, ShellComponent],
-  template: `
-    @if (!loggedIn()) {
-      <app-login (loggedIn)="onLogin()" />
-    } @else {
-      <app-shell />
-    }
-  `,
+  imports: [RouterOutlet],
+  template: `<router-outlet />`,
 })
-export class AppComponent {
-  loggedIn = computed(() => !!this.auth.currentUser());
-  constructor(private auth: AuthService) {}
-  onLogin() {}
-}
+export class AppComponent {}

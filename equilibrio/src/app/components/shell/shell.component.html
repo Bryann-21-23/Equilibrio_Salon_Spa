@@ -18,29 +18,25 @@
 </header>
 
 <nav class="tabs">
-  <button class="tab" [class.active]="activeTab()==='visualizar'" (click)="switch('visualizar')">
+  <a class="tab" routerLink="/visualizar" routerLinkActive="active">
     📊 Visualizar datos
-  </button>
-  <button class="tab" [class.active]="activeTab()==='registrar'" (click)="switch('registrar')">
+  </a>
+  <a class="tab" routerLink="/registrar" routerLinkActive="active">
     ✏️ Registrar servicio
-  </button>
-  <button class="tab" [class.active]="activeTab()==='registrar-usuarios'" (click)="switch('registrar-usuarios')">
+  </a>
+  <a class="tab" routerLink="/registrar-usuarios" routerLinkActive="active">
     👤 Registrar Usuarios
-  </button>
-  <button class="tab" [class.active]="activeTab()==='visualizar-usuarios'" (click)="switch('visualizar-usuarios')">
+  </a>
+  <a class="tab" routerLink="/visualizar-usuarios" routerLinkActive="active">
     👥 Lista de Usuarios
-  </button>
+  </a>
   @if (isAdmin()) {
-    <button class="tab" [class.active]="activeTab()==='admin'" (click)="switch('admin')">
+    <a class="tab" routerLink="/admin" routerLinkActive="active">
       ⚙️ Administración
-    </button>
+    </a>
   }
 </nav>
 
 <main>
-  @if (activeTab()==='visualizar') { <app-visualizar /> }
-  @if (activeTab()==='registrar')  { <app-registrar />  }
-  @if (activeTab()==='registrar-usuarios') { <app-registrar-usuarios /> }
-  @if (activeTab()==='visualizar-usuarios') { <app-visualizar-usuarios /> }
-  @if (activeTab()==='admin')      { <app-admin />       }
+  <router-outlet />
 </main>
