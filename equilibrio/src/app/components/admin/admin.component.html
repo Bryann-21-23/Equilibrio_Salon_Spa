@@ -14,15 +14,54 @@
     </div>
   </div>
 
+  <!-- FORMULARIO DE CREACIÓN DE USUARIOS -->
   <div class="section">
-    <div class="section-title">Crear nuevo usuario</div>
-...
+    <div class="section-title">Crear nuevo usuario del sistema</div>
+    <div class="create-form">
+      <div class="form-row">
+        <div class="field">
+          <label>Usuario</label>
+          <input type="text" [ngModel]="newUser()" (ngModelChange)="newUser.set($event)" placeholder="nombre_usuario">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" [ngModel]="newPass()" (ngModelChange)="newPass.set($event)" placeholder="••••••">
+        </div>
+        <div class="field">
+          <label>Rol</label>
+          <select [ngModel]="newRole()" (ngModelChange)="newRole.set($event)">
+            <option value="user">Empleada</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <button class="btn-create" (click)="create()">Crear usuario</button>
+      </div>
       @if (msg()) {
         <p [class]="msgOk() ? 'msg ok' : 'msg err'">{{ msg() }}</p>
       }
     </div>
   </div>
 
+  <!-- LISTA DE USUARIOS REGISTRADOS -->
   <div class="section">
-    <div class="section-title">Usuarios registrados</div>
-...
+    <div class="section-title">Usuarios con acceso al sistema</div>
+    <div class="users-grid">
+      @for (u of users(); track u.id) {
+        <div class="user-card">
+          <div class="user-info">
+            <div class="user-name">{{ u.username }}</div>
+            <div class="user-role">
+              {{ u.role === 'admin' ? '🔑 Administrador' : '👤 Empleada' }}
+            </div>
+          </div>
+          @if (isSelf(u)) {
+            <span class="self-badge">Tú (Sesión activa)</span>
+          } @else {
+            <button class="btn-del-user" (click)="delete(u)">Eliminar acceso</button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+</div>
