@@ -42,26 +42,4 @@
     </div>
   </div>
 
-  <!-- LISTA DE USUARIOS REGISTRADOS -->
-  <div class="section">
-    <div class="section-title">Usuarios con acceso al sistema</div>
-    <div class="users-grid">
-      @for (u of users(); track u.id) {
-        <div class="user-card">
-          <div class="user-info">
-            <div class="user-name">{{ u.username }}</div>
-            <div class="user-role">
-              {{ u.role === 'admin' ? '🔑 Administrador' : '👤 Empleada' }}
-            </div>
-          </div>
-          @if (isSelf(u)) {
-            <span class="self-badge">Tú (Sesión activa)</span>
-          } @else {
-            <button class="btn-del-user" (click)="delete(u)">Eliminar acceso</button>
-          }
-        </div>
-      }
-    </div>
-  </div>
-
 </div>
