@@ -73,12 +73,20 @@ export class AdminComponent {
   exportToExcel() {
     const clientes = this.clientesSvc.clientes();
     const servicios = this.serviciosSvc.servicios();
+    const personal = this.auth.getUsers();
+
     const wb = XLSX.utils.book_new();
+    
     const wsClientes = XLSX.utils.json_to_sheet(clientes);
     XLSX.utils.book_append_sheet(wb, wsClientes, 'Clientes');
+
     const wsServicios = XLSX.utils.json_to_sheet(servicios);
     XLSX.utils.book_append_sheet(wb, wsServicios, 'Servicios');
-    const fileName = `Equilibrio_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    const wsPersonal = XLSX.utils.json_to_sheet(personal);
+    XLSX.utils.book_append_sheet(wb, wsPersonal, 'Personal_Sistema');
+
+    const fileName = `Equilibrio_Full_Backup_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(wb, fileName);
   }
 
@@ -86,13 +94,14 @@ export class AdminComponent {
     const data = {
       clientes: this.clientesSvc.clientes(),
       servicios: this.serviciosSvc.servicios(),
+      personal: this.auth.getUsers(),
       fechaExportacion: new Date().toLocaleString()
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Equilibrio_IA_Data_${new Date().getTime()}.json`;
+    a.download = `Equilibrio_Complete_Data_${new Date().getTime()}.json`;
     a.click();
     window.URL.revokeObjectURL(url);
   }
