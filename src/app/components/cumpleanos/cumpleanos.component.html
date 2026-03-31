@@ -1,0 +1,39 @@
+<div class="cumpleanos-container">
+  <div class="header-section">
+    <h1>🎂 Próximos Cumpleaños</h1>
+    <p>Celebrando a nuestros clientes del mes de {{ mesActual }}</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Buscando cumpleañeros...</p>
+    </div>
+  } @else if (cumpleañeros().length === 0) {
+    <div class="empty-state">
+      <div class="icon">🎈</div>
+      <h2>No hay cumpleaños este mes</h2>
+      <p>¡Aprovecha para registrar nuevos clientes!</p>
+    </div>
+  } @else {
+    <div class="cumple-grid">
+      @for (cliente of cumpleañeros(); track cliente.id) {
+        <div class="cumple-card">
+          <div class="date-badge">
+            <span class="day">{{ getDia(cliente.cumpleanos) }}</span>
+            <span class="month">DE {{ mesActual.substring(0, 3).toUpperCase() }}</span>
+          </div>
+          <div class="client-info">
+            <h3>{{ cliente.nombre }} {{ cliente.apellido }}</h3>
+            <p class="code">Código: <span>{{ cliente.codigo }}</span></p>
+            @if (cliente.celular) {
+              <a [href]="'https://wa.me/51' + cliente.celular" target="_blank" class="whatsapp-btn">
+                <span>📱 Enviar Saludo</span>
+              </a>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

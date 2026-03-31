@@ -10,6 +10,24 @@ export class ClientesService {
 
   constructor() { this.load(); }
 
+  async loadCumpleanos() {
+    // Calculamos el mes actual (formato string con 0 delante si es necesario: 01, 02, ..., 12)
+    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    
+    // Como en Supabase el campo cumpleanos es de tipo DATE (YYYY-MM-DD),
+    // usaremos un filtro 'LIKE' con el formato '%-MM-%' para buscar el mes.
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .ilike('cumpleanos', `%-${currentMonth}-%`)
+      .order('cumpleanos', { ascending: true });
+
+    if (!error && data) {
+      return data as Cliente[];
+    }
+    return [];
+  }
+
   async load(offset: number = 0) {
     const { data, error } = await supabase
       .from('clientes')
