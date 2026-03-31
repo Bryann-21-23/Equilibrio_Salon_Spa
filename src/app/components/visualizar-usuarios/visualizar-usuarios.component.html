@@ -1,0 +1,116 @@
+<div class="view-container">
+  <div class="header-section">
+    <div class="title">Lista de Usuarios</div>
+    <div class="search-box">
+      <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" placeholder="Buscar por nombre, apellido o código...">
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>ID Sistema</th>
+          <th>Nombre</th>
+          <th>Apellido</th>
+          <th>Celular</th>
+          <th style="width: 50px;"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of clientesList(); track c.id; let i = $index) {
+          <tr class="main-row" (click)="toggleExpand(c.id)" [class.expanded]="expandedId() === c.id">
+            <td class="num-col">{{ i + 1 }}</td>
+            <td class="code-col"><code>{{ c.codigo }}</code></td>
+            <td class="td-name">{{ c.nombre }}</td>
+            <td>{{ c.apellido || '-' }}</td>
+            <td>{{ c.celular || '-' }}</td>
+            <td>
+              <button class="btn-del" (click)="deleteCliente(c.id, $event)" title="Eliminar">🗑️</button>
+            </td>
+          </tr>
+          
+          <!-- FILA EXPANDIDA -->
+          <tr *ngIf="expandedId() === c.id" class="detail-row">
+            <td colspan="6">
+              <div class="client-detail-card">
+                <div class="detail-grid">
+                  <div class="detail-info">
+                    <p><strong>📧 Correo:</strong> {{ c.correo || 'No registrado' }}</p>
+                    <p><strong>🎂 Cumpleaños:</strong> {{ c.cumpleanos || 'No registrado' }}</p>
+                  </div>
+                  <div class="detail-stats">
+                    <div class="stat-pill">
+                      <span class="label">Servicios</span>
+                      <span class="value">{{ getServiceCount(c.id) }}</span>
+                    </div>
+                    <div class="stat-pill">
+                      <span class="label">Total Invertido</span>
+                      <span class="value">S/ {{ getTotalSpent(c.id) | number:'1.2-2' }}</span>
+                    </div>
+                  </div>
+                  <div class="detail-actions">
+                    <button class="btn-history" (click)="viewHistory(c)">
+                      🕒 Ver Historial
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="empty-msg">No hay usuarios registrados</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (hasMore()) {
+      <div class="pagination-area">
+        <button class="btn-more" (click)="loadMore()">
+          📂 Cargar más usuarios...
+        </button>
+      </div>
+    }
+  </div>
+  
+  <div class="footer-stats">
+    Mostrando: {{ clientesList().length }} usuarios
+  </div>
+</div>
+
+<!-- MODAL DE HISTORIAL -->
+<div class="modal-overlay" *ngIf="showHistory()" (click)="showHistory.set(false)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Historial de {{ selectedClientName() }}</h3>
+      <button class="btn-close" (click)="showHistory.set(false)">✕</button>
+    </div>
+    <div class="modal-body">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Servicio</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (h of selectedHistory(); track h.id) {
+            <tr>
+              <td>{{ h.fecha }} <small>{{ h.hora }}</small></td>
+              <td>{{ h.tipo }}</td>
+              <td class="h-monto">S/ {{ h.monto | number:'1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="empty-msg">No se encontraron servicios vinculados</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

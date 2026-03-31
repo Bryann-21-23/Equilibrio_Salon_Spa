@@ -1,0 +1,153 @@
+<div class="vis-wrap">
+
+  <!-- SUB TABS -->
+  <div class="sub-tabs">
+    <button [class.active]="activeTab()==='servicios'" (click)="switchTab('servicios')">
+      Datos de servicios
+    </button>
+    @if (isAdmin()) {
+      <button [class.active]="activeTab()==='economicos'" (click)="switchTab('economicos')">
+        Datos económicos
+      </button>
+    }
+  </div>
+
+  <!-- ── SERVICIOS ── -->
+  @if (activeTab()==='servicios') {
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Total servicios</div><div class="stat-value">{{ statsServ().total }}</div></div>
+      <div class="stat"><div class="stat-label">Clientes únicos</div><div class="stat-value">{{ statsServ().clientes }}</div></div>
+      <div class="stat"><div class="stat-label">Este mes</div><div class="stat-value">{{ statsServ().mes }}</div></div>
+      <div class="stat"><div class="stat-label">Hoy</div><div class="stat-value">{{ statsServ().hoy }}</div></div>
+    </div>
+
+    <div class="filters">
+      <div class="field">
+        <label>Cliente</label>
+        <input type="text" [ngModel]="fNombre()" (ngModelChange)="fNombre.set($event)" placeholder="Buscar...">
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select [ngModel]="fTipo()" (ngModelChange)="fTipo.set($event)">
+          <option value="">Todos</option>
+          @for (t of tipos; track t) { <option [value]="t">{{ t }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label>Desde</label>
+        <input type="date" [ngModel]="fDesde()" (ngModelChange)="fDesde.set($event)">
+      </div>
+      <div class="field">
+        <label>Hasta</label>
+        <input type="date" [ngModel]="fHasta()" (ngModelChange)="fHasta.set($event)">
+      </div>
+      <button class="btn-filter" (click)="applyFilter()">Filtrar</button>
+      <button class="btn-clear"  (click)="clearFilter()">Limpiar</button>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <span class="table-title">Historial de servicios</span>
+        <span class="count-badge">{{ filtrados().length }} registros</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th><th>Servicio</th><th>Monto</th>
+            <th>Fecha &amp; Hora</th><th>Registrado por</th>
+            @if (canDelete()) { <th></th> }
+          </tr>
+        </thead>
+        <tbody>
+          @if (sortedFiltrados().length === 0) {
+            <tr><td [attr.colspan]="canDelete() ? 6 : 5">
+              <div class="empty-state">✂️<br>No hay registros</div>
+            </td></tr>
+          }
+          @for (s of sortedFiltrados(); track s.id) {
+            <tr>
+              <td class="td-name">{{ s.nombre }}</td>
+              <td><span class="chip">{{ s.tipo }}</span></td>
+              <td class="td-monto">S/. {{ s.monto.toFixed(2) }}</td>
+              <td class="td-fecha">{{ fmt(s.fecha) }} · {{ s.hora }}</td>
+              <td class="td-user">{{ s.registradoPor }}</td>
+              @if (canDelete()) {
+                <td><button class="btn-del" (click)="delete(s.id)">✕</button></td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (hasMore()) {
+        <div class="pagination-area">
+          <button class="btn-more" (click)="loadMore()">
+            📂 Cargar más registros...
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── ECONÓMICOS ── -->
+  @if (activeTab()==='economicos' && isAdmin()) {
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Ingresos totales</div><div class="stat-value">{{ statsEco().total.toFixed(2) }}<small> S/.</small></div></div>
+      <div class="stat"><div class="stat-label">Este mes</div><div class="stat-value">{{ statsEco().mes.toFixed(2) }}<small> S/.</small></div></div>
+      <div class="stat"><div class="stat-label">Promedio / servicio</div><div class="stat-value">{{ statsEco().prom.toFixed(2) }}<small> S/.</small></div></div>
+      <div class="stat"><div class="stat-label">Mejor día</div><div class="stat-value stat-value--sm">{{ statsEco().mejor }}</div></div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title-group">
+          <span class="eco-card-title">📈 Ingresos en el tiempo</span>
+          <select class="chart-filter-select" [ngModel]="chartTipo()" (ngModelChange)="chartTipo.set($event)">
+            <option value="">Todos los servicios</option>
+            @for (t of tipos; track t) { <option [value]="t">{{ t }}</option> }
+          </select>
+        </div>
+        <div class="period-pills">
+          @for (p of periods; track p.key) {
+            <button [class.active]="period()===p.key" (click)="setPeriod(p.key)">{{ p.label }}</button>
+          }
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas #chartCanvas></canvas>
+      </div>
+    </div>
+
+    <div class="eco-grid">
+      <!-- Servicios más vendidos -->
+      <div class="eco-card">
+        <div class="eco-card-title">🏆 Servicios más vendidos</div>
+        @if (rankingTipos().length === 0) {
+          <p class="no-data">Sin datos aún</p>
+        }
+        @for (item of rankingTipos(); track item[0]; let i = $index) {
+          <div class="rank-row">
+            <span class="rank-n">{{ i+1 }}</span>
+            <span class="rank-name">{{ item[0] }}</span>
+            <span class="rank-val">{{ item[1] }} serv.</span>
+          </div>
+        }
+      </div>
+
+      <!-- Clientes top -->
+      <div class="eco-card">
+        <div class="eco-card-title">👑 Clientes top (por gasto)</div>
+        @if (rankingClientes().length === 0) {
+          <p class="no-data">Sin datos aún</p>
+        }
+        @for (item of rankingClientes(); track item[0]; let i = $index) {
+          <div class="rank-row">
+            <span class="rank-n">{{ i+1 }}</span>
+            <span class="rank-name" style="text-transform:capitalize">{{ item[0] }}</span>
+            <span class="rank-val">S/.{{ item[1].toFixed(2) }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
