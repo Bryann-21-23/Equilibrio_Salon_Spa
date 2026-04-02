@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Manejo de CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -17,12 +16,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 
-    // Cliente con service_role para operaciones administrativas
     const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false }
     });
 
-    // Cliente con la sesión del usuario que hace la petición
     const authHeader = req.headers.get('Authorization')!;
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -38,7 +35,6 @@ serve(async (req) => {
       });
     }
 
-    // Verificar rol en la tabla usuarios_sistema
     const { data: profile, error: profileError } = await adminClient
       .from('usuarios_sistema')
       .select('role')
@@ -46,37 +42,35 @@ serve(async (req) => {
       .single();
 
     if (profileError || profile?.role !== 'admin') {
-      return new Response(JSON.stringify({ error: "Acceso denegado: Se requiere rol de administrador" }), { 
+      return new Response(JSON.stringify({ error: "Acceso denegado" }), { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
         status: 403 
       });
     }
 
-    // 2. Proceder con la creación del usuario si es admin
-    const { username, password, role } = await req.json()
-    const email = `${username.toLowerCase().trim()}@equilibrio.com`
+    // 2. Proceder con el borrado del usuario
+    const { userId } = await req.json();
+    
+    // Evitar auto-borrado (opcional, pero recomendado)
+    if (userId === requester.id) {
+       throw new Error("No puedes eliminar tu propia cuenta mediante esta función.");
+    }
 
-    const { data: authData, error: createAuthError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { username, role }
-    })
-
-    if (createAuthError) throw createAuthError
-
+    // Borrado en cascada (usuarios_sistema y auth.users)
+    // Primero en la tabla de sistema (si hay RLS que impida borrar auth sin borrar esto)
     const { error: dbError } = await adminClient
       .from('usuarios_sistema')
-      .insert([{ 
-        id: authData.user.id, 
-        username, 
-        role 
-      }])
+      .delete()
+      .eq('id', userId);
 
-    if (dbError) throw dbError
+    if (dbError) throw dbError;
+
+    // Borrado en Supabase Auth
+    const { error: authDelError } = await adminClient.auth.admin.deleteUser(userId);
+    if (authDelError) throw authDelError;
 
     return new Response(
-      JSON.stringify({ message: "Usuario creado con éxito", userId: authData.user.id }),
+      JSON.stringify({ message: "Usuario eliminado correctamente" }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
 

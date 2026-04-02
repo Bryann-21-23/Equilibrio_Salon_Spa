@@ -7,7 +7,7 @@ import { RegistrarComponent } from './components/registrar/registrar.component';
 import { VisualizarUsuariosComponent } from './components/visualizar-usuarios/visualizar-usuarios.component';
 import { RegistrarUsuariosComponent } from './components/registrar-usuarios/registrar-usuarios.component';
 import { CumpleanosComponent } from './components/cumpleanos/cumpleanos.component';
-import { authGuard } from './services/auth.guard';
+import { authGuard, adminGuard } from './services/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -16,11 +16,11 @@ export const routes: Routes = [
     component: ShellComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'admin', component: AdminComponent },
+      { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
       { path: 'visualizar', component: VisualizarComponent },
       { path: 'registrar', component: RegistrarComponent },
-      { path: 'visualizar-usuarios', component: VisualizarUsuariosComponent },
-      { path: 'registrar-usuarios', component: RegistrarUsuariosComponent },
+      { path: 'visualizar-usuarios', component: VisualizarUsuariosComponent, canActivate: [adminGuard] },
+      { path: 'registrar-usuarios', component: RegistrarUsuariosComponent, canActivate: [adminGuard] },
       { path: 'cumpleanos', component: CumpleanosComponent },
       { path: '', redirectTo: 'visualizar', pathMatch: 'full' },
     ],

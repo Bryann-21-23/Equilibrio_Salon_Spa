@@ -19,7 +19,6 @@ export class AuthService {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        console.log('Sesión recuperada para UID:', session.user.id);
         await this.fetchUserProfile(session.user.id);
       }
     } finally {
@@ -27,7 +26,6 @@ export class AuthService {
     }
 
     supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Cambio de Auth:', event);
       if (session?.user) {
         await this.fetchUserProfile(session.user.id);
       } else {
@@ -37,25 +35,20 @@ export class AuthService {
   }
 
   private async fetchUserProfile(uid: string) {
-    console.log('Buscando perfil en tabla usuarios_sistema para UID:', uid);
     const { data, error } = await supabase
       .from('usuarios_sistema')
       .select('*')
       .eq('id', uid)
       .single();
 
-    if (error) {
-      console.error('Error al buscar perfil:', error.message);
-      console.warn('ASEGÚRATE de que el UID de Auth coincida con el campo id de la tabla usuarios_sistema.');
-    }
-
     if (data) {
-      console.log('Perfil encontrado:', data);
       this.currentUser.set(data as Usuario);
     }
   }
 
   async loadUsers() {
+    // Si no somos admin, no deberíamos ni intentar cargar todos los usuarios
+    // Pero si el RLS está bien puesto, la base de datos devolverá vacío o error.
     const { data, error } = await supabase
       .from('usuarios_sistema')
       .select('*')
@@ -68,30 +61,19 @@ export class AuthService {
 
   async login(username: string, password: string): Promise<boolean> {
     const email = `${username.toLowerCase().trim()}@equilibrio.com`;
-    console.log('Intentando login para:', email);
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    if (error) {
-      console.error('Error de Supabase Auth:', error.message);
-      return false;
-    }
+    if (error) return false;
 
     if (data.user) {
-      console.log('Login Auth exitoso. UID:', data.user.id);
       await this.fetchUserProfile(data.user.id);
-      
-      // Si después de buscar el perfil, currentUser sigue null, es que el UID no estaba en la tabla
-      if (!this.currentUser()) {
-        console.error('Login cancelado: No se encontró el registro en la tabla usuarios_sistema.');
-        return false;
-      }
+      if (!this.currentUser()) return false;
       return true;
     }
-    
     return false;
   }
 
@@ -101,25 +83,21 @@ export class AuthService {
   }
 
   async createUser(username: string, password: string, role: 'admin' | 'user'): Promise<boolean> {
-    const { data, error } = await supabase.functions.invoke('create-user', {
+    const { error } = await supabase.functions.invoke('create-user', {
       body: { username, password, role }
     });
 
-    if (error) {
-      console.error('Error al crear usuario mediante Edge Function:', error.message);
-      return false;
-    }
+    if (error) return false;
 
-    console.log('Usuario creado exitosamente:', data.message);
     await this.loadUsers();
     return true;
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('usuarios_sistema')
-      .delete()
-      .eq('id', id);
+    // LLAMADA SEGURA MEDIANTE EDGE FUNCTION
+    const { error } = await supabase.functions.invoke('delete-user', {
+      body: { userId: id }
+    });
 
     if (!error) {
       await this.loadUsers();
