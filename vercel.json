@@ -1,6 +1,9 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/equilibrio/browser",
+  "outputDirectory": "dist/equilibrio",
+  "env": {
+    "NODE_VERSION": "18"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
