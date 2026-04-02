@@ -9,7 +9,7 @@
       <div class="spinner"></div>
       <p>Buscando cumpleañeros...</p>
     </div>
-  } @else if (cumpleañeros().length === 0) {
+  } @else if (cumpleaneros().length === 0) {
     <div class="empty-state">
       <div class="icon">🎈</div>
       <h2>No hay cumpleaños este mes</h2>
@@ -17,7 +17,7 @@
     </div>
   } @else {
     <div class="cumple-grid">
-      @for (cliente of cumpleañeros(); track cliente.id) {
+      @for (cliente of cumpleaneros(); track cliente.id) {
         <div class="cumple-card">
           <div class="date-badge">
             <span class="day">{{ getDia(cliente.cumpleanos) }}</span>

@@ -11,7 +11,7 @@ import { Cliente } from '../../models';
   styleUrl: './cumpleanos.component.css'
 })
 export class CumpleanosComponent implements OnInit {
-  cumpleañeros = signal<Cliente[]>([]);
+  cumpleaneros = signal<Cliente[]>([]);
   loading = signal<boolean>(true);
   mesActual: string = '';
 
@@ -26,7 +26,7 @@ export class CumpleanosComponent implements OnInit {
   async ngOnInit() {
     try {
       const data = await this.clientesService.loadCumpleanos();
-      this.cumpleañeros.set(data);
+      this.cumpleaneros.set(data);
     } catch (error) {
       console.error('Error cargando cumpleaños:', error);
     } finally {
@@ -34,10 +34,9 @@ export class CumpleanosComponent implements OnInit {
     }
   }
 
-  getDia(fecha: string | null): string {
+  getDia(fecha: string | null | undefined): string {
     if (!fecha) return '??';
-    // La fecha viene en formato YYYY-MM-DD
     const partes = fecha.split('-');
-    return partes[2] || '??';
+    return partes[partes.length - 1] || '??';
   }
 }
