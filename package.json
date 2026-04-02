@@ -12,7 +12,7 @@
   "private": true,
   "packageManager": "npm@10.9.4",
   "engines": {
-    "node": "22.x"
+    "node": "20.x"
   },
   "dependencies": {
     "@angular/common": "^19.0.0",
