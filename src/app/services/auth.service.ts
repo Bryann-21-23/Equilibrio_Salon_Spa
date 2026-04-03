@@ -21,6 +21,8 @@ export class AuthService {
       if (session?.user) {
         await this.fetchUserProfile(session.user.id);
       }
+    } catch (e) {
+       console.error('Error initSession:', e);
     } finally {
       this.isInitialized.set(true);
     }
@@ -34,21 +36,26 @@ export class AuthService {
     });
   }
 
-  private async fetchUserProfile(uid: string) {
+  private async fetchUserProfile(uid: string): Promise<boolean> {
     const { data, error } = await supabase
       .from('usuarios_sistema')
       .select('*')
       .eq('id', uid)
       .single();
 
+    if (error) {
+      console.error('Error al buscar perfil en usuarios_sistema:', error.message);
+      return false;
+    }
+
     if (data) {
       this.currentUser.set(data as Usuario);
+      return true;
     }
+    return false;
   }
 
   async loadUsers() {
-    // Si no somos admin, no deberíamos ni intentar cargar todos los usuarios
-    // Pero si el RLS está bien puesto, la base de datos devolverá vacío o error.
     const { data, error } = await supabase
       .from('usuarios_sistema')
       .select('*')
@@ -59,7 +66,7 @@ export class AuthService {
     }
   }
 
-  async login(username: string, password: string): Promise<boolean> {
+  async login(username: string, password: string): Promise<{ ok: boolean, msg: string }> {
     const email = `${username.toLowerCase().trim()}@equilibrio.com`;
     
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -67,14 +74,19 @@ export class AuthService {
       password
     });
 
-    if (error) return false;
+    if (error) {
+       return { ok: false, msg: 'Email o contraseña incorrectos.' };
+    }
 
     if (data.user) {
-      await this.fetchUserProfile(data.user.id);
-      if (!this.currentUser()) return false;
-      return true;
+      const profileFound = await this.fetchUserProfile(data.user.id);
+      if (!profileFound) {
+        return { ok: false, msg: 'Error: El usuario existe pero NO está en la tabla usuarios_sistema.' };
+      }
+      return { ok: true, msg: '' };
     }
-    return false;
+    
+    return { ok: false, msg: 'Error desconocido.' };
   }
 
   async logout() {
@@ -94,7 +106,6 @@ export class AuthService {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    // LLAMADA SEGURA MEDIANTE EDGE FUNCTION
     const { error } = await supabase.functions.invoke('delete-user', {
       body: { userId: id }
     });

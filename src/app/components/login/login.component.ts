@@ -18,14 +18,22 @@ export class LoginComponent {
   password = signal('');
   showPassword = signal(false);
   error = signal('');
+  isLoading = signal(false); // Nuevo: Para saber si está cargando
 
   async doLogin() {
-    const ok = await this.auth.login(this.username(), this.password());
-    if (ok) {
+    if (this.isLoading()) return;
+
+    this.error.set('');
+    this.isLoading.set(true);
+
+    const res = await this.auth.login(this.username(), this.password());
+    
+    if (res.ok) {
       this.router.navigate(['/']);
     } else {
-      this.error.set('Credenciales inválidas.');
+      this.error.set(res.msg);
     }
+    this.isLoading.set(false);
   }
 
   togglePassword() {
