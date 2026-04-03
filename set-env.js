@@ -1,16 +1,25 @@
 const fs = require('fs');
-// Intentamos cargar dotenv, pero si falla (como en Vercel), seguimos adelante
+// Intentamos cargar dotenv para local, pero en Vercel usamos process.env directamente
 try {
-  require('dotenv').config({ path: './.env' });
+  if (fs.existsSync('./.env')) {
+    require('dotenv').config({ path: './.env' });
+    console.log('✅ Cargando variables desde .env local');
+  }
 } catch (e) {
-  console.log('No se encontró archivo .env, usando variables de entorno del sistema.');
+  console.log('ℹ️ Usando variables de entorno del sistema.');
 }
 
 const targetPath = './src/environments/environment.ts';
 
-// Usamos las variables del sistema (Vercel las inyecta aquí)
-const supabaseUrl = process.env.SUPABASE_URL || 'SUPABASE_URL_PLACEHOLDER';
-const supabaseKey = process.env.SUPABASE_KEY || 'SUPABASE_KEY_PLACEHOLDER';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+
+// VALIDACIÓN CRÍTICA: Si no hay variables, avisamos y fallamos
+if (!supabaseUrl || !supabaseKey || supabaseUrl === 'SUPABASE_URL_PLACEHOLDER') {
+  console.error('❌ ERROR CRÍTICO: Las variables SUPABASE_URL o SUPABASE_KEY no están definidas.');
+  console.error('Asegúrate de configurarlas en el panel de Vercel (Settings -> Environment Variables).');
+  process.exit(1); 
+}
 
 const envConfigFile = `export const environment = {
   production: true,
@@ -21,8 +30,8 @@ const envConfigFile = `export const environment = {
 
 try {
   fs.writeFileSync(targetPath, envConfigFile);
-  console.log(`Entorno generado exitosamente en: ${targetPath}`);
+  console.log(`✅ Entorno generado exitosamente con URL: ${supabaseUrl.substring(0, 20)}...`);
 } catch (err) {
-  console.error('Error al generar environment.ts:', err);
-  process.exit(1); // Forzamos el error para que el build se detenga si falla esto
+  console.error('❌ Error al escribir environment.ts:', err);
+  process.exit(1);
 }
