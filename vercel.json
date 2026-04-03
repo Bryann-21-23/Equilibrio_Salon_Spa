@@ -1,6 +1,7 @@
 {
+  "installCommand": "npm install --legacy-peer-deps",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/equilibrio",
+  "outputDirectory": "dist/equilibrio/browser",
   "rewrites": [
     {
       "source": "/(.*)",
