@@ -1,53 +1,82 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { Cliente } from '../models';
 import { supabase } from '../lib/supabase';
+import { NotificationService } from './notification.service';
 
 @Injectable({ providedIn: 'root' })
 export class ClientesService {
+  private ns = inject(NotificationService);
+  
   clientes = signal<Cliente[]>([]);
   hasMore = signal<boolean>(true);
+  loading = signal<boolean>(false);
   private pageSize = 50;
 
   constructor() { this.load(); }
 
   async loadCumpleanos() {
-    // Calculamos el mes actual (formato string con 0 delante si es necesario: 01, 02, ..., 12)
-    const currentMonth = (new Date().getMonth() + 1).toString().padStart(2, '0');
-    
-    // Como en Supabase el campo cumpleanos es de tipo DATE (YYYY-MM-DD),
-    // usaremos un filtro 'LIKE' con el formato '%-MM-%' para buscar el mes.
-    const { data, error } = await supabase
-      .from('clientes')
-      .select('*')
-      .ilike('cumpleanos', `%-${currentMonth}-%`)
-      .order('cumpleanos', { ascending: true });
+    this.loading.set(true);
+    try {
+      // Obtenemos el mes actual (1-12)
+      const currentMonth = new Date().getMonth() + 1;
+      
+      // Usamos una función de ayuda de Supabase para llamar a la función de extracción de fecha de Postgres
+      // o simplemente consultamos todos y filtramos en cliente si la tabla no es gigante (>10000 registros).
+      // Dado que es un spa local, filtrar en cliente los del mes es más seguro contra errores de tipos SQL.
+      
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*');
 
-    if (!error && data) {
-      return data as Cliente[];
+      if (error) throw error;
+
+      // Filtramos en el cliente para evitar errores de casting en Postgres
+      const filtrados = (data as Cliente[] || []).filter(c => {
+        if (!c.cumpleanos) return false;
+        const mesCliente = parseInt(c.cumpleanos.split('-')[1]);
+        return mesCliente === currentMonth;
+      });
+
+      return filtrados;
+    } catch (err: any) {
+      this.ns.error('Error al cargar cumpleañeros: ' + err.message);
+      return [];
+    } finally {
+      this.loading.set(false);
     }
-    return [];
   }
 
   async load(offset: number = 0) {
-    const { data, error } = await supabase
-      .from('clientes')
-      .select('*')
-      .order('id', { ascending: false })
-      .range(offset, offset + this.pageSize - 1);
+    if (this.loading()) return;
+    this.loading.set(true);
 
-    if (!error && data) {
-      const newClients = data as Cliente[];
-      if (offset === 0) {
-        this.clientes.set(newClients);
-      } else {
-        this.clientes.update(list => [...list, ...newClients]);
+    try {
+      const { data, error } = await supabase
+        .from('clientes')
+        .select('*')
+        .order('id', { ascending: false })
+        .range(offset, offset + this.pageSize - 1);
+
+      if (error) throw error;
+
+      if (data) {
+        const newClients = data as Cliente[];
+        if (offset === 0) {
+          this.clientes.set(newClients);
+        } else {
+          this.clientes.update(list => [...list, ...newClients]);
+        }
+        this.hasMore.set(data.length === this.pageSize);
       }
-      this.hasMore.set(data.length === this.pageSize);
+    } catch (err: any) {
+      this.ns.error('Error al cargar clientes: ' + err.message);
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async loadMore() {
-    if (this.hasMore()) {
+    if (this.hasMore() && !this.loading()) {
       await this.load(this.clientes().length);
     }
   }

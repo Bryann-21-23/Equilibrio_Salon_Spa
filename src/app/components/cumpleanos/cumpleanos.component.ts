@@ -26,7 +26,15 @@ export class CumpleanosComponent implements OnInit {
   async ngOnInit() {
     try {
       const data = await this.clientesService.loadCumpleanos();
-      this.cumpleaneros.set(data);
+      
+      // Ordenar por día del mes ignorando el año
+      const sorted = (data || []).sort((a, b) => {
+        const diaA = parseInt(this.getDia(a.cumpleanos));
+        const diaB = parseInt(this.getDia(b.cumpleanos));
+        return diaA - diaB;
+      });
+
+      this.cumpleaneros.set(sorted);
     } catch (error) {
       console.error('Error cargando cumpleaños:', error);
     } finally {
@@ -36,7 +44,9 @@ export class CumpleanosComponent implements OnInit {
 
   getDia(fecha: string | null | undefined): string {
     if (!fecha) return '??';
+    // Formato esperado: YYYY-MM-DD
     const partes = fecha.split('-');
-    return partes[partes.length - 1] || '??';
+    const dia = partes[partes.length - 1];
+    return dia ? dia.padStart(2, '0') : '??';
   }
 }

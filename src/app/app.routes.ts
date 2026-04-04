@@ -1,27 +1,61 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './components/login/login.component';
-import { ShellComponent } from './components/shell/shell.component';
-import { AdminComponent } from './components/admin/admin.component';
-import { VisualizarComponent } from './components/visualizar/visualizar.component';
-import { RegistrarComponent } from './components/registrar/registrar.component';
-import { VisualizarUsuariosComponent } from './components/visualizar-usuarios/visualizar-usuarios.component';
-import { RegistrarUsuariosComponent } from './components/registrar-usuarios/registrar-usuarios.component';
-import { CumpleanosComponent } from './components/cumpleanos/cumpleanos.component';
 import { authGuard, adminGuard } from './services/auth.guard';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./components/login/login.component').then((m) => m.LoginComponent),
+  },
   {
     path: '',
-    component: ShellComponent,
+    loadComponent: () =>
+      import('./components/shell/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
     children: [
-      { path: 'admin', component: AdminComponent, canActivate: [adminGuard] },
-      { path: 'visualizar', component: VisualizarComponent },
-      { path: 'registrar', component: RegistrarComponent },
-      { path: 'visualizar-usuarios', component: VisualizarUsuariosComponent, canActivate: [adminGuard] },
-      { path: 'registrar-usuarios', component: RegistrarUsuariosComponent, canActivate: [adminGuard] },
-      { path: 'cumpleanos', component: CumpleanosComponent },
+      {
+        path: 'admin',
+        loadComponent: () =>
+          import('./components/admin/admin.component').then((m) => m.AdminComponent),
+        canActivate: [adminGuard],
+      },
+      {
+        path: 'visualizar',
+        loadComponent: () =>
+          import('./components/visualizar/visualizar.component').then(
+            (m) => m.VisualizarComponent
+          ),
+      },
+      {
+        path: 'registrar',
+        loadComponent: () =>
+          import('./components/registrar/registrar.component').then(
+            (m) => m.RegistrarComponent
+          ),
+      },
+      {
+        path: 'visualizar-usuarios',
+        loadComponent: () =>
+          import('./components/visualizar-usuarios/visualizar-usuarios.component').then(
+            (m) => m.VisualizarUsuariosComponent
+          ),
+        canActivate: [adminGuard],
+      },
+      {
+        path: 'registrar-usuarios',
+        loadComponent: () =>
+          import('./components/registrar-usuarios/registrar-usuarios.component').then(
+            (m) => m.RegistrarUsuariosComponent
+          ),
+        canActivate: [adminGuard],
+      },
+      {
+        path: 'cumpleanos',
+        loadComponent: () =>
+          import('./components/cumpleanos/cumpleanos.component').then(
+            (m) => m.CumpleanosComponent
+          ),
+      },
       { path: '', redirectTo: 'visualizar', pathMatch: 'full' },
     ],
   },

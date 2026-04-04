@@ -39,6 +39,9 @@ export class RegistrarComponent implements OnInit {
     ).slice(0, 5);
   });
 
+  hasMore = computed(() => this.svc.hasMore());
+  isLoading = computed(() => this.svc.loading() || this.clientesSvc.loading());
+
   constructor(
     private auth: AuthService, 
     private svc: ServiciosService,

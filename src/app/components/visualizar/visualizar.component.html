@@ -48,7 +48,7 @@
     <div class="table-wrap">
       <div class="table-header">
         <span class="table-title">Historial de servicios</span>
-        <span class="count-badge">{{ filtrados().length }} registros</span>
+        <span class="count-badge">{{ sortedFiltrados().length }} registros</span>
       </div>
       <table>
         <thead>
@@ -59,7 +59,16 @@
           </tr>
         </thead>
         <tbody>
-          @if (sortedFiltrados().length === 0) {
+          @if (isLoading() && sortedFiltrados().length === 0) {
+            <tr>
+              <td [attr.colspan]="canDelete() ? 6 : 5">
+                <div class="loading-overlay">
+                  <div class="spinner"></div>
+                  <span class="loading-text">Cargando registros...</span>
+                </div>
+              </td>
+            </tr>
+          } @else if (sortedFiltrados().length === 0) {
             <tr><td [attr.colspan]="canDelete() ? 6 : 5">
               <div class="empty-state">✂️<br>No hay registros</div>
             </td></tr>
@@ -80,8 +89,13 @@
       </table>
       @if (hasMore()) {
         <div class="pagination-area">
-          <button class="btn-more" (click)="loadMore()">
-            📂 Cargar más registros...
+          <button class="btn-more" (click)="loadMore()" [disabled]="isLoading()">
+            @if (isLoading()) {
+              <div class="spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:8px;"></div>
+              Cargando...
+            } @else {
+              📂 Cargar más registros...
+            }
           </button>
         </div>
       }

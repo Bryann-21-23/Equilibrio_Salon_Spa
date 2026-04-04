@@ -48,7 +48,12 @@
     </div>
   </div>
 
-  <button class="btn btn-primary btn-block" (click)="submit()">
-    <i class="icon-save"></i> Registrar Servicio
+  <button class="btn btn-primary btn-block" (click)="submit()" [disabled]="isLoading()">
+    @if (isLoading()) {
+      <div class="spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:8px; border-top-color: #fff;"></div>
+      Registrando...
+    } @else {
+      <i class="icon-save"></i> Registrar Servicio
+    }
   </button>
 </div>

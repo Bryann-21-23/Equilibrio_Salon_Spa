@@ -43,7 +43,14 @@
       </div>
     </div>
 
-    <button class="btn-primary" (click)="doLogin()">Ingresar</button>
+    <button class="btn-primary" (click)="doLogin()" [disabled]="isLoading()">
+      @if (isLoading()) {
+        <div class="spinner" style="width:18px; height:18px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:8px; border-top-color: #fff;"></div>
+        Ingresando...
+      } @else {
+        Ingresar
+      }
+    </button>
 
     @if (error()) {
       <p class="login-error">{{ error() }}</p>

@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 export class AuthService {
   currentUser = signal<Usuario | null>(null);
   isInitialized = signal<boolean>(false);
+  loading = signal<boolean>(false);
   private usersSignal = signal<Usuario[]>([]);
   
   allUsers = computed(() => this.usersSignal());
@@ -17,12 +18,19 @@ export class AuthService {
 
   private async initSession() {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
       if (session?.user) {
-        await this.fetchUserProfile(session.user.id);
+        const profileFound = await this.fetchUserProfile(session.user.id);
+        if (!profileFound) {
+          console.warn('Sesión activa pero perfil no encontrado en usuarios_sistema');
+          // Opcional: Cerrar sesión si el perfil es obligatorio
+          // await supabase.auth.signOut();
+        }
       }
     } catch (e) {
-       console.error('Error initSession:', e);
+       console.error('Error durante la inicialización de la sesión:', e);
     } finally {
       this.isInitialized.set(true);
     }
@@ -56,37 +64,47 @@ export class AuthService {
   }
 
   async loadUsers() {
-    const { data, error } = await supabase
-      .from('usuarios_sistema')
-      .select('*')
-      .order('username', { ascending: true });
+    this.loading.set(true);
+    try {
+      const { data, error } = await supabase
+        .from('usuarios_sistema')
+        .select('*')
+        .order('username', { ascending: true });
 
-    if (!error && data) {
-      this.usersSignal.set(data as Usuario[]);
+      if (!error && data) {
+        this.usersSignal.set(data as Usuario[]);
+      }
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async login(username: string, password: string): Promise<{ ok: boolean, msg: string }> {
-    const email = `${username.toLowerCase().trim()}@equilibrio.com`;
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    this.loading.set(true);
+    try {
+      const email = `${username.toLowerCase().trim()}@equilibrio.com`;
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-    if (error) {
-       return { ok: false, msg: 'Email o contraseña incorrectos.' };
-    }
-
-    if (data.user) {
-      const profileFound = await this.fetchUserProfile(data.user.id);
-      if (!profileFound) {
-        return { ok: false, msg: 'Error: El usuario existe pero NO está en la tabla usuarios_sistema.' };
+      if (error) {
+         return { ok: false, msg: 'Credenciales inválidas.' };
       }
-      return { ok: true, msg: '' };
+
+      if (data.user) {
+        const profileFound = await this.fetchUserProfile(data.user.id);
+        if (!profileFound) {
+          return { ok: false, msg: 'Error: El usuario existe pero NO está en la tabla usuarios_sistema.' };
+        }
+        return { ok: true, msg: '' };
+      }
+      
+      return { ok: false, msg: 'Error desconocido.' };
+    } finally {
+      this.loading.set(false);
     }
-    
-    return { ok: false, msg: 'Error desconocido.' };
   }
 
   async logout() {
@@ -95,26 +113,36 @@ export class AuthService {
   }
 
   async createUser(username: string, password: string, role: 'admin' | 'user'): Promise<boolean> {
-    const { error } = await supabase.functions.invoke('create-user', {
-      body: { username, password, role }
-    });
+    this.loading.set(true);
+    try {
+      const { error } = await supabase.functions.invoke('create-user', {
+        body: { username, password, role }
+      });
 
-    if (error) return false;
+      if (error) return false;
 
-    await this.loadUsers();
-    return true;
+      await this.loadUsers();
+      return true;
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const { error } = await supabase.functions.invoke('delete-user', {
-      body: { userId: id }
-    });
+    this.loading.set(true);
+    try {
+      const { error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
 
-    if (!error) {
-      await this.loadUsers();
-      return true;
+      if (!error) {
+        await this.loadUsers();
+        return true;
+      }
+      return false;
+    } finally {
+      this.loading.set(false);
     }
-    return false;
   }
 
   getUsers(): Usuario[] {
