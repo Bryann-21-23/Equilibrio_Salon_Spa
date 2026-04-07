@@ -25,8 +25,12 @@
           "value": "max-age=31536000; includeSubDomains; preload"
         },
         {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        },
+        {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://equilibrio-salon.vercel.app"
+          "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
